@@ -78,3 +78,11 @@ DESCUBRIMOS Q TODOS LOS PROBLEMAS DE Incompatibilidad SON POR EL PYTHON 13, HABI
 
 py -3.11 -m venv guia_env
 pip install "langchain==0.1.17" "chromadb==0.4.22" "streamlit==1.49.1" "huggingface-hub==0.34.4" "pypdf==6.0.0" "openpyxl==3.1.5" "python-docx==1.2.0" "sentence-transformers==5.1.0" "transformers==4.56.1" "torch==2.8.0" "python-dotenv==1.1.1" "requests==2.32.5" "numpy==1.24.3"
+
+ahora si podemos usar req.txt otra vez jij
+# Crear entorno
+python -m venv guia_env
+guia_env\Scripts\activate
+
+# Instalar TODO
+pip install -r requirements.txt
