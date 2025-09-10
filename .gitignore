@@ -1,0 +1,5 @@
+guia_env/
+.env
+chroma_db/
+__pycache__/
+*.pyc
