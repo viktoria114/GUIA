@@ -18,7 +18,7 @@ pregunta = st.text_input("Pregunta sobre la UNLaR:")
 
 if pregunta:
     respuesta = st.session_state.qa_chain.invoke(pregunta)
-    st.write("**Respuesta:**", respuesta["result"])
+    st.write("**Respuesta:**", respuesta["answer"])
     
     # Mostrar fuentes
     with st.expander("Ver fuentes"):

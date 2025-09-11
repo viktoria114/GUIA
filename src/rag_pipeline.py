@@ -1,28 +1,26 @@
 # src/rag_pipeline.py
+from langchain_openai import ChatOpenAI
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain.chains import ConversationalRetrievalChain
+from langchain.memory import ConversationBufferMemory, ChatMessageHistory
+from langchain_community.vectorstores import Chroma
 from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceBgeEmbeddings
-from langchain_huggingface import HuggingFaceEndpoint
-from langchain_community.vectorstores import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain.chains import ConversationalRetrievalChain
-from langchain.memory import ConversationBufferMemory
+from langchain.prompts import PromptTemplate
 from config import HF_TOKEN
 import os
+import traceback
 
 # 1. CARGAR DOCUMENTOS
 def cargar_documentos():
-    """Carga todos los PDFs de la carpeta docs/ y los divide en chunks"""
     try:
         loader = DirectoryLoader(
-            "./docs", 
-            glob="**/*.pdf", 
+            "./docs",
+            glob="**/*.pdf",
             loader_cls=PyPDFLoader,
             show_progress=True
         )
         documentos = loader.load()
-        
-        # Dividir en chunks pequeños
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
             chunk_overlap=200,
@@ -31,119 +29,116 @@ def cargar_documentos():
         chunks = text_splitter.split_documents(documentos)
         print(f"✅ Se cargaron {len(chunks)} chunks de documentos")
         return chunks
-        
     except Exception as e:
         print(f"❌ Error cargando documentos: {e}")
         return []
 
-# 2. CREAR BASE DE DATOS VECTORIAL
+# 2. CREAR VECTORSTORE
 def crear_vectorstore(chunks):
-    """Crea y guarda la base de datos vectorial con embeddings"""
     try:
-        # Modelo de embeddings (gratis y eficiente)
         embeddings = HuggingFaceEmbeddings(
-            model_name="BAAI/bge-small-en",
-            model_kwargs={"device": "cpu"},
-                    )
-        
-        # Crear vectorstore
+            model_name="BAAI/bge-small-en-v1.5",
+            model_kwargs={'device': 'cpu'},
+            encode_kwargs={'normalize_embeddings': True}
+        )
+        print("✅ HuggingFaceEmbeddings inicializado correctamente.")
         vectorstore = Chroma.from_documents(
             documents=chunks,
             embedding=embeddings,
-            persist_directory="../chroma_db"  # Guarda para reusar
+            persist_directory="../chroma_db"
         )
         print("✅ Vectorstore creado y guardado")
         return vectorstore
-        
     except Exception as e:
         print(f"❌ Error creando vectorstore: {e}")
+        traceback.print_exc()
         return None
 
-# 3. CREAR LLM (Hugging Face)
+# 3. CREAR LLM
 def crear_llm():
-    """Configura el modelo de lenguaje con Hugging Face"""
     try:
-        llm = HuggingFaceEndpoint(
-            repo_id="HuggingFaceH4/zephyr-7b-beta",  
-            task="conversational",
+        llm = ChatOpenAI(
+            model="meta-llama/Llama-3.1-8B-Instruct:cerebras",
             temperature=0.1,
-            max_new_tokens=512,
-            top_p=0.9,
-            huggingfacehub_api_token=HF_TOKEN
+            max_tokens=1024,
+            openai_api_key=HF_TOKEN,
+            openai_api_base="https://router.huggingface.co/v1"
         )
-        print("✅ LLM configurado con HuggingFaceH4/zephyr-7b-beta")
+        print("✅ LLM configurado con ChatOpenAI")
         return llm
     except Exception as e:
         print(f"❌ Error configurando LLM: {e}")
         return None
 
-
-# 4. CREAR MEMORIA PARA CAG
+# 4. MEMORIA
 def crear_memoria():
-    """Crea memoria para recordar el contexto de la conversación"""
     return ConversationBufferMemory(
         memory_key="chat_history",
         return_messages=True,
-        output_key="result"
+        output_key="answer",
+        chat_memory=ChatMessageHistory()
     )
 
-# 5. CADENA DE CAG (¡Aquí está la magia!)
+# 5. CADENA DE QA CON CONTEXTO UNLaR
 def crear_qa_chain(vectorstore, llm):
-    """Crea la cadena de QA con soporte para modelos conversacionales"""
     try:
         memory = crear_memoria()
 
+        # Prompt base con contexto de la UNLaR
+        system_prompt = """
+Eres un asistente experto en la Universidad Nacional de La Rioja (UNLaR). 
+Proporciona respuestas precisas y claras basadas en documentos de la UNLaR. 
+Si no sabes la respuesta exacta, indica que no tienes información suficiente.
+
+Documentos relevantes: {context}
+
+Pregunta del usuario: {question}
+Respuesta:
+"""
+
+        prompt = PromptTemplate(
+            template=system_prompt,
+            input_variables=["context", "question"]  # OBLIGATORIO para StuffDocumentsChain
+        )
+
         qa_chain = ConversationalRetrievalChain.from_llm(
             llm=llm,
-            retriever=vectorstore.as_retriever(
-                search_type="similarity",
-                search_kwargs={"k": 3}
-            ),
+            retriever=vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 5}),
             memory=memory,
             return_source_documents=True,
+            combine_docs_chain_kwargs={"prompt": prompt},
             verbose=True
         )
-        print("✅ Cadena CAG creada con ConversationalRetrievalChain")
+        print("✅ Cadena RAG creada con contexto UNLaR")
         return qa_chain
-
     except Exception as e:
-        import traceback
-        print(f"❌ Error creando cadena CAG: {e}")
+        print(f"❌ Error creando cadena RAG: {e}")
         traceback.print_exc()
         return None
 
-# 6. FUNCIÓN PARA PROBAR
+# 6. PROBAR SISTEMA
 def probar_sistema():
-    """Función para probar que todo funciona"""
     print("🧪 Probando sistema...")
     chunks = cargar_documentos()
-    if not chunks:
-        return False
-        
+    if not chunks: return False
+
     vectorstore = crear_vectorstore(chunks)
-    if not vectorstore:
-        return False
-        
+    if not vectorstore: return False
+
     llm = crear_llm()
-    if not llm:
-        return False
-        
+    if not llm: return False
+
     qa_chain = crear_qa_chain(vectorstore, llm)
-    if not qa_chain:
-        return False
-        
-    # Prueba simple
+    if not qa_chain: return False
+
     try:
-        respuesta = qa_chain.invoke("¿Cuales son las reglas mas importantes en la Unlar?")
-        print("✅ Sistema funcionando:", respuesta["answer"][:100] + "...")
+        respuesta = qa_chain.invoke({"question": "¿Cuales son las reglas más importantes en la UNLaR?"})
+        print("✅ Sistema funcionando:", respuesta["answer"][:300] + "...")
         return True
     except Exception as e:
-        import traceback
         print("❌ Error en prueba:", str(e))
         traceback.print_exc()
         return False
 
-
-# Ejecutar prueba si se corre este archivo directamente
 if __name__ == "__main__":
     probar_sistema()
