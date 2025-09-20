@@ -8,6 +8,7 @@ from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.prompts import PromptTemplate
 from config import HF_TOKEN
+from langchain_huggingface import HuggingFaceEndpoint
 import os
 import traceback
 
@@ -57,14 +58,14 @@ def crear_vectorstore(chunks):
 # 3. CREAR LLM
 def crear_llm():
     try:
-        llm = ChatOpenAI(
-            model="meta-llama/Llama-3.1-8B-Instruct:cerebras",
+        llm = HuggingFaceEndpoint(
+            repo_id="meta-llama/Llama-3.1-8B-Instruct",  # modelo
+            huggingfacehub_api_token=HF_TOKEN,
+            task="text-generation",
             temperature=0.1,
-            max_tokens=1024,
-            openai_api_key=HF_TOKEN,
-            openai_api_base="https://router.huggingface.co/v1"
+            max_new_tokens=1024
         )
-        print("✅ LLM configurado con ChatOpenAI")
+        print("✅ LLM configurado con HuggingFaceEndpoint")
         return llm
     except Exception as e:
         print(f"❌ Error configurando LLM: {e}")

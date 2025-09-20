@@ -17,7 +17,7 @@ if "qa_chain" not in st.session_state:
 pregunta = st.text_input("Pregunta sobre la UNLaR:")
 
 if pregunta:
-    respuesta = st.session_state.qa_chain.invoke(pregunta)
+    respuesta = st.session_state.qa_chain.invoke({"question": pregunta})
     st.write("**Respuesta:**", respuesta["answer"])
     
     # Mostrar fuentes
