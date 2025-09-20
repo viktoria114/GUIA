@@ -1,3 +1,4 @@
+hf_models/
 guia_env/
 .env
 chroma_db/
