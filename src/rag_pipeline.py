@@ -22,8 +22,8 @@ def cargar_documentos():
         )
         documentos = loader.load()
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200,
+            chunk_size=1500,
+            chunk_overlap=100,
             length_function=len
         )
         chunks = text_splitter.split_documents(documentos)
@@ -37,9 +37,10 @@ def cargar_documentos():
 def crear_vectorstore(chunks):
     try:
         embeddings = HuggingFaceEmbeddings(
-            model_name="BAAI/bge-small-en-v1.5",
-            model_kwargs={'device': 'cpu'},
-            encode_kwargs={'normalize_embeddings': True}
+               model_name="BAAI/bge-m3",               # 👈 nombre correcto
+    model_kwargs={'device': 'cuda'},
+    encode_kwargs={'normalize_embeddings': True},
+    cache_folder="./hf_models",             # opcional: para guardar local
         )
         print("✅ HuggingFaceEmbeddings inicializado correctamente.")
         vectorstore = Chroma.from_documents(
@@ -103,7 +104,7 @@ Respuesta:
 
         qa_chain = ConversationalRetrievalChain.from_llm(
             llm=llm,
-            retriever=vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 5}),
+            retriever=vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 3, "lambda_mult": 0.7}),
             memory=memory,
             return_source_documents=True,
             combine_docs_chain_kwargs={"prompt": prompt},
@@ -132,7 +133,9 @@ def probar_sistema():
     if not qa_chain: return False
 
     try:
-        respuesta = qa_chain.invoke({"question": "¿Cuales son las reglas más importantes en la UNLaR?"})
+        respuesta = qa_chain.invoke({"question": "¿Cuales son los alcances del titulo de Ingeniero en sistemas?"})
+        for doc in respuesta["source_documents"]:
+         print(doc.metadata.get("source"))
         print("✅ Sistema funcionando:", respuesta["answer"][:300] + "...")
         return True
     except Exception as e:
