@@ -77,7 +77,6 @@ def crear_memoria():
         memory_key="chat_history",
         return_messages=True,
         output_key="answer",
-        chat_memory=ChatMessageHistory()
     )
 
 # 5. CADENA DE QA CON CONTEXTO UNLaR
