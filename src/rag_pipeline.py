@@ -38,7 +38,7 @@ def crear_vectorstore(chunks):
     try:
         embeddings = HuggingFaceEmbeddings(
                model_name="BAAI/bge-m3",               # 👈 nombre correcto
-    model_kwargs={'device': 'cpu'},
+    model_kwargs={'device': 'cuda'},
     encode_kwargs={'normalize_embeddings': True},
     cache_folder="./hf_models",             # opcional: para guardar local
         )
@@ -133,7 +133,7 @@ def probar_sistema():
     if not qa_chain: return False
 
     try:
-        respuesta = qa_chain.invoke({"question": "¿Cuales son las materias del plan de estudio?"})
+        respuesta = qa_chain.invoke({"question": "¿Cuales son los alcances del titulo de Ingeniero en sistemas?"})
         for doc in respuesta["source_documents"]:
          print(doc.metadata.get("source"))
         print("✅ Sistema funcionando:", respuesta["answer"][:300] + "...")
