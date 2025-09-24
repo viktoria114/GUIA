@@ -8,6 +8,7 @@ from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.prompts import PromptTemplate
 from config import HF_TOKEN
+from config import OR_TOKEN
 import os
 import traceback
 
@@ -38,7 +39,7 @@ def crear_vectorstore(chunks):
     try:
         embeddings = HuggingFaceEmbeddings(
                model_name="BAAI/bge-m3",               # 👈 nombre correcto
-    model_kwargs={'device': 'cuda'},
+    model_kwargs={'device': 'cpu'},
     encode_kwargs={'normalize_embeddings': True},
     cache_folder="./hf_models",             # opcional: para guardar local
         )
@@ -59,13 +60,13 @@ def crear_vectorstore(chunks):
 def crear_llm():
     try:
         llm = ChatOpenAI(
-            model="meta-llama/Llama-3.1-8B-Instruct:cerebras",
+            model="deepseek/deepseek-chat-v3.1:free",
             temperature=0.1,
             max_tokens=1024,
-            openai_api_key=HF_TOKEN,
-            openai_api_base="https://router.huggingface.co/v1"
+            openai_api_key=OR_TOKEN,
+            openai_api_base="https://openrouter.ai/api/v1"
         )
-        print("✅ LLM configurado con ChatOpenAI")
+        print("✅ LLM configurado con OpenRouter Deepseek")
         return llm
     except Exception as e:
         print(f"❌ Error configurando LLM: {e}")
