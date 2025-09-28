@@ -7,7 +7,6 @@ from langchain_community.vectorstores import Chroma
 from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.prompts import PromptTemplate
-from config import HF_TOKEN
 from config import OR_TOKEN
 import os
 import traceback
@@ -39,7 +38,7 @@ def crear_vectorstore(chunks):
     try:
         embeddings = HuggingFaceEmbeddings(
                model_name="BAAI/bge-m3",               # 👈 nombre correcto
-    model_kwargs={'device': 'cpu'},
+    model_kwargs={'device': 'cuda'},
     encode_kwargs={'normalize_embeddings': True},
     cache_folder="./hf_models",             # opcional: para guardar local
         )
@@ -79,23 +78,50 @@ def crear_memoria():
         return_messages=True,
         output_key="answer",
         chat_memory=ChatMessageHistory()
+        
     )
 
 # 5. CADENA DE QA CON CONTEXTO UNLaR
 def crear_qa_chain(vectorstore, llm):
     try:
         memory = crear_memoria()
+        historial = memory.chat_memory.messages
+        print(f"✅ Memoria: {historial}")
+
 
         # Prompt base con contexto de la UNLaR
         system_prompt = """
-Eres un asistente experto en la Universidad Nacional de La Rioja (UNLaR). 
-Proporciona respuestas precisas y claras basadas en documentos de la UNLaR. 
-Si no sabes la respuesta exacta, indica que no tienes información suficiente.
+Eres un asistente virtual diseñado para ayudar a estudiantes de la Universidad Nacional de La Rioja (UNLaR).
+Tu función principal es responder preguntas y brindar asistencia sobre temas académicos, administrativos y de la vida universitaria en la UNLaR.
 
-Documentos relevantes: {context}
+=== OBJETIVOS ===
+- Brindar respuestas precisas y fieles al contenido de los documentos proporcionados.
+- Incluir toda la información relevante encontrada en las fuentes, priorizando la claridad y la utilidad para el estudiante.
+- Mantener una comunicación cercana y amigable, usando un tono cordial y accesible para un público joven.
+- Responder siempre en el mismo idioma en que el usuario formule la pregunta.
 
+=== REGLAS DE RESPUESTA ===
+1. Presenta las respuestas en forma de resumen explicativo. 
+   - Usa párrafos para explicaciones generales.
+   - Emplea listas numeradas o con viñetas solo cuando la información se preste a enumeraciones claras.
+2. No uses citas textuales a menos que el usuario solicite explícitamente el texto exacto.
+3. Si no encuentras información suficiente en los documentos, responde de manera clara que no cuentas con esa información. 
+   - Sugiere amablemente al usuario consultar la página oficial de la UNLaR, contactar a la universidad por sus medios oficiales o acudir presencialmente a las oficinas para confirmar.
+4. Si la pregunta no está relacionada con la UNLaR o su contexto educativo/administrativo, informa al usuario que está fuera de tu propósito principal.
+5. Adapta el nivel de detalle según la pregunta:
+   - Para consultas breves, responde de forma concisa pero completa.
+   - Para consultas más complejas, responde de forma más detallada, sin omitir información relevante.
+6. Nunca pidas datos personales ni sugieras que el usuario los proporcione.
+7. Si el usuario no solicita información específica, responde cortésmente sin forzar una búsqueda en los documentos.
+
+=== CONTEXTO DISPONIBLE ===
+La siguiente información ha sido extraída de documentos oficiales de la UNLaR. Utiliza este contexto para responder a las preguntas del usuario de la mejor manera posible.
+{context}
+
+=== INSTRUCCIÓN ===
 Pregunta del usuario: {question}
-Respuesta:
+
+Tu respuesta debe seguir fielmente estas reglas y objetivos.
 """
 
         prompt = PromptTemplate(
@@ -143,6 +169,8 @@ def probar_sistema():
         print("❌ Error en prueba:", str(e))
         traceback.print_exc()
         return False
+    
+    
 
 if __name__ == "__main__":
     probar_sistema()
