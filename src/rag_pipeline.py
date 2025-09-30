@@ -27,10 +27,10 @@ def cargar_documentos():
             length_function=len
         )
         chunks = text_splitter.split_documents(documentos)
-        print(f"✅ Se cargaron {len(chunks)} chunks de documentos")
+        print(f" Se cargaron {len(chunks)} chunks de documentos")
         return chunks
     except Exception as e:
-        print(f"❌ Error cargando documentos: {e}")
+        print(f" Error cargando documentos: {e}")
         return []
 
 # 2. CREAR VECTORSTORE
@@ -38,20 +38,20 @@ def crear_vectorstore(chunks):
     try:
         embeddings = HuggingFaceEmbeddings(
                model_name="BAAI/bge-m3",               # 👈 nombre correcto
-    model_kwargs={'device': 'cuda'},
+    model_kwargs={'device': 'cpu'},
     encode_kwargs={'normalize_embeddings': True},
     cache_folder="./hf_models",             # opcional: para guardar local
         )
-        print("✅ HuggingFaceEmbeddings inicializado correctamente.")
+        print(" HuggingFaceEmbeddings inicializado correctamente.")
         vectorstore = Chroma.from_documents(
             documents=chunks,
             embedding=embeddings,
             persist_directory="../chroma_db"
         )
-        print("✅ Vectorstore creado y guardado")
+        print(" Vectorstore creado y guardado")
         return vectorstore
     except Exception as e:
-        print(f"❌ Error creando vectorstore: {e}")
+        print(f" Error creando vectorstore: {e}")
         traceback.print_exc()
         return None
 
@@ -65,10 +65,10 @@ def crear_llm():
             openai_api_key=OR_TOKEN,
             openai_api_base="https://openrouter.ai/api/v1"
         )
-        print("✅ LLM configurado con OpenRouter Deepseek")
+        print(" LLM configurado con OpenRouter Deepseek")
         return llm
     except Exception as e:
-        print(f"❌ Error configurando LLM: {e}")
+        print(f" Error configurando LLM: {e}")
         return None
 
 # 4. MEMORIA
@@ -86,19 +86,18 @@ def crear_qa_chain(vectorstore, llm):
     try:
         memory = crear_memoria()
         historial = memory.chat_memory.messages
-        print(f"✅ Memoria: {historial}")
+        print(f" Memoria: {historial}")
 
 
         # Prompt base con contexto de la UNLaR
         system_prompt = """
 Eres un asistente virtual diseñado para ayudar a estudiantes de la Universidad Nacional de La Rioja (UNLaR).
 Tu función principal es responder preguntas y brindar asistencia sobre temas académicos, administrativos y de la vida universitaria en la UNLaR.
-
 === OBJETIVOS ===
 - Brindar respuestas precisas y fieles al contenido de los documentos proporcionados.
 - Incluir toda la información relevante encontrada en las fuentes, priorizando la claridad y la utilidad para el estudiante.
 - Mantener una comunicación cercana y amigable, usando un tono cordial y accesible para un público joven.
-- Responder siempre en el mismo idioma en que el usuario formule la pregunta.
+- Detecta automáticamente el idioma en que el usuario escribe su pregunta, y responde en ese mismo idioma, sin traducirlo al español por defecto.
 
 === REGLAS DE RESPUESTA ===
 1. Presenta las respuestas en forma de resumen explicativo. 
@@ -137,16 +136,16 @@ Tu respuesta debe seguir fielmente estas reglas y objetivos.
             combine_docs_chain_kwargs={"prompt": prompt},
             verbose=True
         )
-        print("✅ Cadena RAG creada con contexto UNLaR")
+        print(" Cadena RAG creada con contexto UNLaR")
         return qa_chain
     except Exception as e:
-        print(f"❌ Error creando cadena RAG: {e}")
+        print(f" Error creando cadena RAG: {e}")
         traceback.print_exc()
         return None
 
 # 6. PROBAR SISTEMA
 def probar_sistema():
-    print("🧪 Probando sistema...")
+    print(" Probando sistema...")
     chunks = cargar_documentos()
     if not chunks: return False
 
@@ -163,10 +162,10 @@ def probar_sistema():
         respuesta = qa_chain.invoke({"question": "¿Cuales son los alcances del titulo de Ingeniero en sistemas?"})
         for doc in respuesta["source_documents"]:
          print(doc.metadata.get("source"))
-        print("✅ Sistema funcionando:", respuesta["answer"][:300] + "...")
+        print(" Sistema funcionando:", respuesta["answer"][:300] + "...")
         return True
     except Exception as e:
-        print("❌ Error en prueba:", str(e))
+        print(" Error en prueba:", str(e))
         traceback.print_exc()
         return False
     
