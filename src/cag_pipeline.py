@@ -4,11 +4,10 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory, ChatMessageHistory
 from langchain_community.vectorstores import Chroma
-from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.prompts import PromptTemplate
 from config import OR_TOKEN
-import os
+from langchain_community.document_loaders import DirectoryLoader, PyMuPDFLoader 
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 import traceback
 
 # 1. CARGAR DOCUMENTOS
@@ -17,18 +16,42 @@ def cargar_documentos():
         loader = DirectoryLoader(
             "./docs",
             glob="**/*.pdf",
-            loader_cls=PyPDFLoader,
+            loader_cls=PyMuPDFLoader,  # <-- ¡CAMBIO AQUÍ!
             show_progress=True
         )
         documentos = loader.load()
+        
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1500,
-            chunk_overlap=100,
+            chunk_size=800,
+            chunk_overlap=200,
             length_function=len
         )
         chunks = text_splitter.split_documents(documentos)
-        print(f" Se cargaron {len(chunks)} chunks de documentos")
-        return chunks
+        
+        print(f" Se generaron {len(chunks)} chunks (antes de limpiar duplicados)")
+
+        # ----- INICIO DE LA SOLUCIÓN 2 (MEJORADA) -----
+        unique_chunks = []
+        seen_content_normalized = set() # Set para contenido normalizado
+
+        for chunk in chunks:
+            # Normalizamos el texto: quitamos espacios al inicio/final
+            # y lo pasamos a minúsculas para la comparación.
+            normalized_content = chunk.page_content.strip().lower() 
+
+            # Ignoramos chunks muy cortos (probablemente basura de navegación)
+            if len(normalized_content) < 50: # Puedes ajustar este número
+                 continue
+
+            if normalized_content not in seen_content_normalized:
+                unique_chunks.append(chunk)
+                seen_content_normalized.add(normalized_content)
+        
+        print(f" Se cargarán {len(unique_chunks)} chunks ÚNICOS (después de limpiar)")
+        # ----- FIN DE LA SOLUCIÓN 2 -----
+
+        return unique_chunks # Devolvemos la lista limpia
+    
     except Exception as e:
         print(f" Error cargando documentos: {e}")
         return []
@@ -37,16 +60,16 @@ def cargar_documentos():
 def crear_vectorstore(chunks):
     try:
         embeddings = HuggingFaceEmbeddings(
-               model_name="BAAI/bge-m3",               # 👈 nombre correcto
-    model_kwargs={'device': 'cpu'},
+               model_name="BAAI/bge-m3",              
+    model_kwargs={'device': 'cuda'},  # o 'cpu' si no tienes GPU
     encode_kwargs={'normalize_embeddings': True},
-    cache_folder="./hf_models",             # opcional: para guardar local
+    cache_folder="./hf_models",            
         )
         print(" HuggingFaceEmbeddings inicializado correctamente.")
         vectorstore = Chroma.from_documents(
             documents=chunks,
             embedding=embeddings,
-            persist_directory="../chroma_db"
+            persist_directory="./chroma_db"
         )
         print(" Vectorstore creado y guardado")
         return vectorstore
@@ -125,12 +148,12 @@ Tu respuesta debe seguir fielmente estas reglas y objetivos.
 
         prompt = PromptTemplate(
             template=system_prompt,
-            input_variables=["context", "question"]  # OBLIGATORIO para StuffDocumentsChain
+            input_variables=["context", "question"] 
         )
 
         qa_chain = ConversationalRetrievalChain.from_llm(
             llm=llm,
-            retriever=vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 3, "lambda_mult": 0.7}),
+            retriever=vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 4, 'fetch_k': 20}),
             memory=memory,
             return_source_documents=True,
             combine_docs_chain_kwargs={"prompt": prompt},
@@ -159,7 +182,7 @@ def probar_sistema():
     if not qa_chain: return False
 
     try:
-        respuesta = qa_chain.invoke({"question": "¿Cuales son los alcances del titulo de Ingeniero en sistemas?"})
+        respuesta = qa_chain.invoke({"question": "¿Cuales son los alcances del titulo de Licenciatura en sistemas?"})
         for doc in respuesta["source_documents"]:
          print(doc.metadata.get("source"))
         print(" Sistema funcionando:", respuesta["answer"][:300] + "...")

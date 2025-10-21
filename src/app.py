@@ -1,4 +1,3 @@
-# src/app.py
 import streamlit as st
 from rag_pipeline import crear_qa_chain, cargar_documentos, crear_vectorstore, crear_llm
 from config import HF_TOKEN
@@ -32,7 +31,7 @@ if pregunta := st.chat_input("Escribí tu pregunta sobre la UNLaR..."):
         st.markdown(pregunta)
 
     # Generar respuesta del asistente
-    with st.chat_message("assistant", avatar="👻"):
+    with st.chat_message("assistant"):
         with st.spinner("Buscando la respuesta en los documentos..."):
             respuesta = st.session_state.qa_chain.invoke(pregunta)
             texto = respuesta["answer"]
