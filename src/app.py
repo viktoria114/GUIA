@@ -1,5 +1,5 @@
 import streamlit as st
-from cag_pipeline import crear_qa_chain, cargar_documentos, crear_vectorstore, crear_llm
+from rag_pipeline import crear_qa_chain, cargar_documentos, crear_vectorstore, crear_llm
 from config import HF_TOKEN
 
 st.set_page_config(page_title="GUIA - Asistente UNLaR", page_icon="🎓")

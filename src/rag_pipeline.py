@@ -2,7 +2,8 @@
 from langchain_openai import ChatOpenAI
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.chains import ConversationalRetrievalChain
-from langchain.memory import ConversationBufferMemory, ChatMessageHistory
+from langchain.memory import ConversationBufferMemory
+from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_community.vectorstores import Chroma
 from langchain.prompts import PromptTemplate
 from config import OR_TOKEN
@@ -23,7 +24,7 @@ def cargar_documentos():
         
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=800,
-            chunk_overlap=200,
+            chunk_overlap=300,
             length_function=len
         )
         chunks = text_splitter.split_documents(documentos)
@@ -153,7 +154,7 @@ Tu respuesta debe seguir fielmente estas reglas y objetivos.
 
         qa_chain = ConversationalRetrievalChain.from_llm(
             llm=llm,
-            retriever=vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 4, 'fetch_k': 20}),
+            retriever=vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 4, 'fetch_k': 20}), 
             memory=memory,
             return_source_documents=True,
             combine_docs_chain_kwargs={"prompt": prompt},
