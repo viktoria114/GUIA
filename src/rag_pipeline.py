@@ -17,7 +17,7 @@ def cargar_documentos():
         loader = DirectoryLoader(
             "./docs",
             glob="**/*.pdf",
-            loader_cls=PyMuPDFLoader,  # <-- ¡CAMBIO AQUÍ!
+            loader_cls=PyMuPDFLoader,
             show_progress=True
         )
         documentos = loader.load()
@@ -31,25 +31,19 @@ def cargar_documentos():
         
         print(f" Se generaron {len(chunks)} chunks (antes de limpiar duplicados)")
 
-        # ----- INICIO DE LA SOLUCIÓN 2 (MEJORADA) -----
+        # ----- Limpieza -----
         unique_chunks = []
-        seen_content_normalized = set() # Set para contenido normalizado
+        seen_content_normalized = set()
 
-        for chunk in chunks:
-            # Normalizamos el texto: quitamos espacios al inicio/final
-            # y lo pasamos a minúsculas para la comparación.
+        for chunk in chunks:  # Normalizamos el texto: quitamos espacios al inicio/final
             normalized_content = chunk.page_content.strip().lower() 
-
-            # Ignoramos chunks muy cortos (probablemente basura de navegación)
-            if len(normalized_content) < 50: # Puedes ajustar este número
+            if len(normalized_content) < 50: # Ignoramos chunks muy cortos 
                  continue
-
             if normalized_content not in seen_content_normalized:
                 unique_chunks.append(chunk)
                 seen_content_normalized.add(normalized_content)
         
         print(f" Se cargarán {len(unique_chunks)} chunks ÚNICOS (después de limpiar)")
-        # ----- FIN DE LA SOLUCIÓN 2 -----
 
         return unique_chunks # Devolvemos la lista limpia
     
@@ -62,7 +56,7 @@ def crear_vectorstore(chunks):
     try:
         embeddings = HuggingFaceEmbeddings(
                model_name="BAAI/bge-m3",              
-    model_kwargs={'device': 'cuda'},  # o 'cpu' si no tienes GPU
+    model_kwargs={'device': 'cuda'},  # o 'cpu' 
     encode_kwargs={'normalize_embeddings': True},
     cache_folder="./hf_models",            
         )
@@ -102,7 +96,6 @@ def crear_memoria():
         return_messages=True,
         output_key="answer",
         chat_memory=ChatMessageHistory()
-        
     )
 
 # 5. CADENA DE QA CON CONTEXTO UNLaR
@@ -154,7 +147,8 @@ Tu respuesta debe seguir fielmente estas reglas y objetivos.
 
         qa_chain = ConversationalRetrievalChain.from_llm(
             llm=llm,
-            retriever=vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 4, 'fetch_k': 20}), 
+            retriever=vectorstore.as_retriever(search_type="mmr", 
+            search_kwargs={"k": 4, 'fetch_k': 20}), 
             memory=memory,
             return_source_documents=True,
             combine_docs_chain_kwargs={"prompt": prompt},
