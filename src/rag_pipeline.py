@@ -56,7 +56,7 @@ def crear_vectorstore(chunks):
     try:
         embeddings = HuggingFaceEmbeddings(
                model_name="BAAI/bge-m3",              
-    model_kwargs={'device': 'cuda'},  # o 'cpu' 
+    model_kwargs={'device': 'cpu'},  # o 'cpu' 
     encode_kwargs={'normalize_embeddings': True},
     cache_folder="./hf_models",            
         )
@@ -77,7 +77,7 @@ def crear_vectorstore(chunks):
 def crear_llm():
     try:
         llm = ChatOpenAI(
-            model="deepseek/deepseek-chat-v3.1:free",
+            model="deepseek/deepseek-chat-v3.1",
             temperature=0.1,
             max_tokens=1024,
             openai_api_key=OR_TOKEN,
