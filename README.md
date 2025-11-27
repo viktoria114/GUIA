@@ -50,9 +50,9 @@ cd GUIA
 
 ### Instalar dependencias  
 ```bash
-python -m venv venv
-source venv/bin/activate   # Linux/Mac
-venv\Scripts\activate      # Windows
+python -m venv guia_env
+source guia_env/bin/activate  # Linux/Mac
+guia_env\Scripts\activate     # Windows
 pip install -r requirements.txt
 ```
 
