@@ -56,7 +56,7 @@ def crear_vectorstore(chunks):
     try:
         embeddings = HuggingFaceEmbeddings(
                model_name="BAAI/bge-m3",              
-    model_kwargs={'device': 'cpu'},  # o 'cpu' 
+    model_kwargs={'device': 'cuda'},  # o 'cpu' 
     encode_kwargs={'normalize_embeddings': True},
     cache_folder="./hf_models",            
         )
