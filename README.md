@@ -86,7 +86,9 @@ GUIA/
 - Soporte de múltiples modelos LLM configurables.  
 - Panel de administración para actualizar documentos.  
 - Autenticación de usuarios en la interfaz.
+- Deploy en la nube.
+- Integración en webs existentes como chatbot.
 
-## Créditos y Despliegue  
-Por: María Victoria Arancio Oviedo
+## Créditos 
+Por: María Victoria Arancio Oviedo, Matias Francisco Moreno Brizuela, José Venteo, Pablo Raúl Baltazar Perez Amberk.
 GitHub: https://github.com/viktoria114/GUIA
