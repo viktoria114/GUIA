@@ -1,4 +1,4 @@
-# 🎓 GUIA - Asistente UNLaR
+#🎓 GUIA - Asistente UNLaR
  
 GUIA es un asistente virtual que responde dudas sobre la Universidad Nacional de La Rioja (UNLaR).  
 Utiliza Retrieval-Augmented Generation (RAG) para buscar en documentos PDF oficiales.  
