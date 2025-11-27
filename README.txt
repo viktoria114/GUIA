@@ -1,88 +1,92 @@
-- solicitamos una arquitectura u organizacion de carpetasa deepseek y nos dio:
+# 🎓 GUIA - Asistente UNLaR
+ 
+GUIA es un asistente virtual que responde dudas sobre la Universidad Nacional de La Rioja (UNLaR).  
+Utiliza Retrieval-Augmented Generation (RAG) para buscar en documentos PDF oficiales.  
+Está orientado a estudiantes y personal administrativo de la UNLaR.
+
+## Características principales 
+- Chat interactivo en tiempo real vía Streamlit.  
+- Búsqueda de respuestas dentro de archivos PDF.  
+- Memoria de conversación para mantener contexto.  
+- Visualización opcional de las fuentes consultadas.
+
+## Usabilidad
+- Interfaz gráfica sencilla y amigable.  
+- Detecta y responde en el idioma del usuario.  
+- Soporta múltiples documentos en formato PDF.  
+- Feedback al usuario mediante indicadores de carga.
+
+## Funcionalidades clave  
+- **Carga de documentos** desde la carpeta `docs/`.  
+- **Fragmentación y limpieza** de texto (chunks) para embeddings.  
+- **Creación de vectorstore** con Chroma y embeddings de HuggingFace.  
+- **Configuración de LLM** mediante OpenRouter y Deepseek.  
+- **Cadena RAG conversacional** con memoria de buffer.  
+- **Interfaz de chat** que enlaza todo el pipeline.
+
+## Tecnologías utilizadas  
+**FrontEnd**  
+- Streamlit  
+
+**BackEnd**  
+- Python 3.10+  
+- LangChain & extensiones (`langchain-openai`, `langchain-community`)  
+- ChromaDB  
+
+**Librerías adicionales**  
+- python-dotenv  
+- HuggingFace Embeddings  
+- PyMuPDF
+- sentence-transformers, transformers  
+- torch  
+
+## Cómo Instalar y Usar  
+
+### Clonar el repositorio  
+```bash
+git clone https://github.com/viktoria114/GUIA.git
+cd GUIA
+```
+
+### Instalar dependencias  
+```bash
+python -m venv venv
+source venv/bin/activate   # Linux/Mac
+venv\Scripts\activate      # Windows
+pip install -r requirements.txt
+```
+
+### Configurar variables de entorno  
+Crear un archivo `.env` en la raíz y definir:  
+```dotenv
+OR_TOKEN="tu_token_de_openrouter"
+```
+
+### Ejecutar el proyecto localmente  
+```bash
+streamlit run src/app.py
+```
+
+## Estructura del Proyecto  
+```
 GUIA/
-├── docs/                   # Documentos de la UNLaR (PDFs, Excel, etc.)
-├── data/                   # Datos procesados (opcional)
+├── docs/                   # PDFs de la UNLaR
 ├── src/
-│   ├── app.py              # Interfaz con Streamlit
-│   ├── rag_pipeline.py     # Lógica de RAG/CAG
-│   └── config.py           # Configuración de APIs
-├── .env                    # Variables de entorno (NO subir a GitHub)
-└── requirements.txt        # Dependencias
+│   ├── app.py              # Interfaz Streamlit
+│   ├── config.py           # Carga de variables de entorno
+│   └── rag_pipeline.py     # Lógica RAG/CAG
+├── .env                    # Variables de entorno
+├── requirements.txt        # Dependencias
+└── README.txt              # Guía de instalación y notas
+```
 
-- las creamos e instalamos. Phyton vs 3.10 o mas.
-- creamos el entorno virtual:
-python -m venv guia_env
-guia_env\Scripts\activate
+## Próximos Pasos  
+- Añadir carga de formatos Excel y Word.  
+- Implementar cache incremental de embeddings.  
+- Soporte de múltiples modelos LLM configurables.  
+- Panel de administración para actualizar documentos.  
+- Autenticación de usuarios en la interfaz.
 
-- luego instalamos las bibliotecas que elegimos:
-# Instalar dependencias básicas
-pip install langchain chromadb streamlit huggingface-hub
-
-# Para manejar documentos (PDFs, Excel, etc.)
-pip install pypdf openpyxl python-docx
-
-# Modelos de embeddings (vectores de texto)
-pip install sentence-transformers
-
-# Cliente para APIs de LLMs (DeepSeek-V3 u otros)
-pip install requests transformers huggingface_hub
-
-# Para procesar imágenes/PDFs escaneados (opcional)
-pip install donut-python 
-
-- configuramos .env con el token propio de cada integrante para que no nos gastemos tan rapido las respuestas gratis
-HF_TOKEN="tu_token_de_hugging_face"
-
-- configuramos el requirements.txt para hacer la instalacion mas sencilla con todas las dependencias:
-
-
-python -m venv guia_env
-guia_env\Scripts\activate
-pip install -r requirements.txt
-
-PERO NO FUNCIONO aaaa
-
-PROCEDEMOS A la Eliminación temporal de requirements.txt
-Problema identificado: El archivo requirements.txt generado automáticamente contenía dependencias conflictivas entre paquetes, específicamente:
-
-Conflictos de versiones de Pydantic:
-
-langchain==0.3.27 requiere pydantic>=2.7.4
-
-chromadb==0.4.0 requiere pydantic<2.0
-
-Incompatibilidad irreconciliable
-
-Problemas de compilación de NumPy:
-
-numpy==1.26.4 requiere herramientas de compilación (Visual Studio Build Tools)
-
-Entorno de desarrollo sin compiladores C++ instalados
-
-Error de metadata generation durante la instalación
-
-Dependencias excesivas:
-
-El requirements.txt original contenía +150 paquetes
-
-Muchos de ellos eran dependencias transitivas innecesarias
-
-Riesgo alto de conflictos y sobrecarga del entorno
-
-Solución implementada:
-✅ Instalación manual controlada con versiones específicas compatibles:
-
-pip install "langchain==0.1.17" "chromadb==0.4.22" "streamlit==1.49.1" "huggingface-hub==0.34.4" "pypdf==6.0.0" "openpyxl==3.1.5" "python-docx==1.2.0" "sentence-transformers==5.1.0" "transformers==4.56.1" "torch==2.8.0" "python-dotenv==1.1.1" "requests==2.32.5" "numpy==1.24.3"
-
-DESCUBRIMOS Q TODOS LOS PROBLEMAS DE Incompatibilidad SON POR EL PYTHON 13, HABIA Q USAR EL 11
-
-py -3.11 -m venv guia_env
-pip install "langchain==0.1.17" "chromadb==0.4.22" "streamlit==1.49.1" "huggingface-hub==0.34.4" "pypdf==6.0.0" "openpyxl==3.1.5" "python-docx==1.2.0" "sentence-transformers==5.1.0" "transformers==4.56.1" "torch==2.8.0" "python-dotenv==1.1.1" "requests==2.32.5" "numpy==1.24.3"
-
-ahora si podemos usar req.txt otra vez jij
-# Crear entorno
-python -m venv guia_env
-guia_env\Scripts\activate
-
-# Instalar TODO
-pip install -r requirements.txt
+## Créditos y Despliegue  
+Por: María Victoria Arancio Oviedo
+GitHub: https://github.com/viktoria114/GUIA
